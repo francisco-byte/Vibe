@@ -7,4 +7,23 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="charcoal_900">#0F1115</color>
+    <color name="midnight_900">#111A28</color>
+
+    <!-- Text -->
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#A0A5B0</color>
+
+    <!-- Accents (pick one or keep both for theme switcher) -->
+    <color name="accent_blue">#00CFFF</color>
+    <color name="accent_emerald">#1DB954</color>
+
+    <!-- Surfaces -->
+    <color name="translucent_white_10">#1AFFFFFF</color> <!-- ~10% -->
+    <color name="tile_bg">#14FFFFFF</color>              <!-- 8–20% good for glassy tiles -->
+    <color name="divider_15">#26FFFFFF</color>
+
+    <!-- Bottom nav background @ 85% -->
+    <color name="bottom_nav_bg">#D80C0E13</color>
 </resources>

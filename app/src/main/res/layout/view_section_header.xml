@@ -1,0 +1,23 @@
+<!-- res/layout/view_section_header.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/headerRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/sectionTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Section Title"
+        android:textColor="@color/text_primary"
+        android:textStyle="bold"
+        android:textSize="18sp" />
+
+    <View
+        android:id="@+id/underline"
+        android:layout_width="32dp"
+        android:layout_height="2dp"
+        android:layout_marginTop="4dp"
+        android:background="@color/accent_blue" />
+</LinearLayout>

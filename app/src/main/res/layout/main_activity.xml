@@ -1,33 +1,204 @@
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/main"
+    android:id="@+id/root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_app_gradient">
 
-    <!-- App title bar -->
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/topAppBar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        android:title="Vibe"
-        android:titleTextColor="@android:color/white"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <!-- RecyclerView for songs -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
+    <!-- Optional grain overlay -->
+    <ImageView
+        android:id="@+id/grain"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:padding="12dp"
-        android:clipToPadding="false"
-        app:layout_constraintTop_toBottomOf="@id/topAppBar"
+        android:src="@drawable/noise"
+        android:alpha="0.04"
+        android:scaleType="centerCrop"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Top bar -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/topAppBar"
+        style="@style/Widget.MaterialComponents.Toolbar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/screen_side_padding"
+        android:paddingEnd="@dimen/screen_side_padding"
+        android:paddingTop="@dimen/top_padding"
+        android:background="@android:color/transparent"
+        app:titleCentered="true"
+        app:title="Vibe"
+        app:titleTextColor="@color/text_primary"
+        app:navigationIcon="@drawable/ic_avatar_circle_32"
+        app:menu="@menu/menu_topbar"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Glassy search bar -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/searchCard"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="@dimen/screen_side_padding"
+        android:layout_marginEnd="@dimen/screen_side_padding"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="@color/translucent_white_10"
+        app:cardCornerRadius="@dimen/card_radius"
+        app:layout_constraintTop_toBottomOf="@id/topAppBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_search_24"
+                app:tint="#AAAAAA" />
+
+            <EditText
+                android:id="@+id/searchInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:hint="Search artists, songs, or moods…"
+                android:inputType="text"
+                android:textColor="@color/text_primary"
+                android:textColorHint="#AAAAAA"
+                android:paddingStart="8dp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Scrollable content -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/searchCard"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_side_padding"
+            android:paddingEnd="@dimen/screen_side_padding">
+
+            <!-- Section: Top Artists -->
+            <include
+                layout="@layout/view_section_header"
+                android:id="@+id/headerArtists"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_spacing" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvTopArtists"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:overScrollMode="never"
+                android:clipToPadding="false"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:paddingEnd="4dp" />
+
+            <!-- Section: Top Tracks -->
+            <include
+                layout="@layout/view_section_header"
+                android:id="@+id/headerTracks"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_spacing" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvTopTracks"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
+
+            <!-- Section: Your Mixes -->
+            <include
+                layout="@layout/view_section_header"
+                android:id="@+id/headerMixes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_spacing" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvMixes"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:overScrollMode="never"
+                android:clipToPadding="false"
+                android:paddingVertical="8dp" />
+
+            <!-- Section: Discover Something New -->
+            <include
+                layout="@layout/view_section_header"
+                android:id="@+id/headerDiscover"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_spacing" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvDiscover"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never"
+                android:paddingBottom="88dp" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom navigation -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/bottom_nav_height"
+        android:background="@drawable/bg_bottom_nav"
+        android:paddingTop="8dp"
+        android:elevation="16dp"
+        app:itemIconTint="@color/nav_item_tint"
+        app:itemTextColor="@color/nav_item_tint"
+        app:menu="@menu/menu_bottom_nav"
+        app:labelVisibilityMode="labeled"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Mood Dial (floating) -->
+    <FrameLayout
+        android:id="@+id/moodDial"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:background="@drawable/mood_dial_bg"
+        android:elevation="24dp"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:translationY="12dp">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_mood_dial"
+            android:padding="18dp"
+            android:contentDescription="Mood Dial" />
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
