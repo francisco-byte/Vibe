@@ -1,4 +1,5 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/btnPlay"
     android:width="800dp"
     android:height="800dp"
     android:viewportWidth="124.51"
