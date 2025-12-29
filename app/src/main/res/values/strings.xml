@@ -2,5 +2,6 @@
     <string name="app_name">VIBE</string>
     <string name="search_artists_songs_or_moods">Search artists, songs, or moods</string>
     <string name="popular_at_the_moment">Popular at the moment</string>
+    <string name="title_activity_profile">ProfileActivity</string>
 
 </resources>

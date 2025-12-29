@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.francisco.vibe">
-
     <!-- 🌐 Required for streaming and API requests -->
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -16,16 +15,26 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Vibe"
         tools:targetApi="34">
+        <activity
+            android:name=".Data.AuthActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
-        <!-- 🎧 Player screen for streaming tracks -->
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".UI.ProfileActivity"
+            android:exported="false"
+            android:label="@string/title_activity_profile"
+            android:theme="@style/Theme.Vibe" />
         <activity
             android:name=".UI.PlayerActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:configChanges="orientation|keyboardHidden|screenSize"
             android:theme="@style/Theme.Vibe" />
-
-        <!-- 🏠 Main screen (home / song list) -->
         <activity
             android:name=".Main"
             android:exported="true"
@@ -33,10 +42,10 @@
             android:theme="@style/Theme.Vibe">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
     </application>
 
 </manifest>

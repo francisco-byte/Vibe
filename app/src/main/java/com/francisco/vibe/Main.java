@@ -8,6 +8,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -15,9 +16,11 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.francisco.vibe.Data.JamendoFetcher;
+import com.francisco.vibe.Data.SessionManager;
 import com.francisco.vibe.Data.Song;
-import com.francisco.vibe.Data.SongHistoryManager;
+import com.francisco.vibe.Data.SongHistoryRepository;
 import com.francisco.vibe.UI.PlayerActivity;
+import com.francisco.vibe.UI.ProfileActivity;
 import com.francisco.vibe.UI.SongAdapter;
 import com.francisco.vibe.databinding.MainActivityBinding;
 
@@ -31,6 +34,8 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
 
     private MainActivityBinding binding;
 
+    private SongHistoryRepository historyRepo;
+    private String currentUser;
     private SongAdapter topTracksAdapter;
     private SongAdapter discoverAdapter;
     private SongAdapter mixesAdapter;
@@ -41,10 +46,22 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        AppCompatDelegate.setDefaultNightMode(
+                AppCompatDelegate.MODE_NIGHT_YES
+        );
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         binding = MainActivityBinding.inflate(getLayoutInflater());
+        binding.btnProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(Main.this, ProfileActivity.class);
+            startActivity(intent);
+        });
         setContentView(binding.getRoot());
+
+        currentUser = SessionManager.getUsername(this);
+
+        // REPO
+        historyRepo = new SongHistoryRepository(this);
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNav, (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
@@ -75,21 +92,26 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
         executor.execute(() -> {
             try {
                 List<Song> popular = JamendoFetcher.search("popular");
-                mainHandler.post(() -> artistsAdapter.setSongs(popular));
+                mainHandler.post(() ->
+                        artistsAdapter.setSongs(popular)
+                );
             } catch (IOException e) {
                 mainHandler.post(() ->
-                        Toast.makeText(this, "Failed to load popular", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this,
+                                "Failed to load popular",
+                                Toast.LENGTH_SHORT).show()
                 );
             }
         });
 
         executor.execute(() -> {
-            List<Song> listenAgain = SongHistoryManager.getLast(this, 6);
-            mainHandler.post(() -> discoverAdapter.setSongs(listenAgain));
+            List<Song> history = historyRepo.getLast(currentUser, 6);
+            mainHandler.post(() ->
+                    discoverAdapter.setSongs(history)
+            );
         });
-
-
     }
+
 
 
 
@@ -102,15 +124,23 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
     @Override
     protected void onResume() {
         super.onResume();
-        discoverAdapter.setSongs(
-                SongHistoryManager.getLast(this, 6)
-        );
+
+        executor.execute(() -> {
+            List<Song> history = historyRepo.getLast(currentUser, 6);
+            mainHandler.post(() ->
+                    discoverAdapter.setSongs(history)
+            );
+        });
     }
+
 
 
     @Override
     public void onSongClicked(Song song) {
-        SongHistoryManager.save(this, song);
+
+        executor.execute(() ->
+                historyRepo.save(currentUser, song)
+        );
 
         Intent intent = new Intent(this, PlayerActivity.class);
         intent.putExtra("title", song.getTitle());
@@ -119,4 +149,5 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
         intent.putExtra("streamUrl", song.getStreamUrl());
         startActivity(intent);
     }
+
 }

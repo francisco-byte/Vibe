@@ -26,4 +26,5 @@
 
     <!-- Bottom nav background @ 85% -->
     <color name="bottom_nav_bg">#D80C0E13</color>
+    <color name="md_theme_error">#F54927 </color>
 </resources>
