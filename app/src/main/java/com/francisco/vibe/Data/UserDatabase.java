@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class UserDatabase extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "vibe_users.db";
-    private static final int DB_VERSION = 2;
+    private static final int DB_VERSION = 5;
 
     public UserDatabase(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -34,6 +34,7 @@ public class UserDatabase extends SQLiteOpenHelper {
                         "artist TEXT," +
                         "imageUrl TEXT," +
                         "streamUrl TEXT," +
+                        "trackId TEXT," +
                         "playedAt INTEGER)"
         );
 
@@ -42,6 +43,7 @@ public class UserDatabase extends SQLiteOpenHelper {
                 "CREATE TABLE favorites (" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                         "user TEXT," +
+                        "trackId TEXT," +
                         "title TEXT," +
                         "artist TEXT," +
                         "imageUrl TEXT," +
@@ -64,7 +66,8 @@ public class UserDatabase extends SQLiteOpenHelper {
                         "title TEXT," +
                         "artist TEXT," +
                         "imageUrl TEXT," +
-                        "streamUrl TEXT)"
+                        "streamUrl TEXT," +
+                        "trackId TEXT)"
         );
     }
 
@@ -73,7 +76,7 @@ public class UserDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 2) { // new version
+        if (oldVersion < 5) { // new version
             // Create missing history table
             db.execSQL(
                     "CREATE TABLE IF NOT EXISTS history (" +
@@ -83,6 +86,7 @@ public class UserDatabase extends SQLiteOpenHelper {
                             "artist TEXT," +
                             "imageUrl TEXT," +
                             "streamUrl TEXT," +
+                            "trackId TEXT," +
                             "playedAt INTEGER)"
             );
 
@@ -91,6 +95,7 @@ public class UserDatabase extends SQLiteOpenHelper {
                     "CREATE TABLE IF NOT EXISTS favorites (" +
                             "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                             "user TEXT," +
+                            "trackId TEXT," +
                             "title TEXT," +
                             "artist TEXT," +
                             "imageUrl TEXT," +
@@ -107,13 +112,15 @@ public class UserDatabase extends SQLiteOpenHelper {
 
             // Playlist songs table
             db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS playlist_songs (" +
+                    "CREATE TABLE playlist_songs (" +
                             "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                             "playlistId INTEGER," +
                             "title TEXT," +
                             "artist TEXT," +
                             "imageUrl TEXT," +
-                            "streamUrl TEXT)"
+                            "streamUrl TEXT," +
+                            "trackId TEXT)"
+
             );
         }
     }

@@ -66,13 +66,15 @@ public class JamendoFetcher {
             for (int i = 0; i < results.size(); i++) {
                 JsonObject track = results.get(i).getAsJsonObject();
 
+                String trackId = track.get("id").getAsString(); // NEW
                 String title = track.get("name").getAsString();
                 String artist = track.get("artist_name").getAsString();
                 String image = track.get("album_image").getAsString();
                 String audio = track.get("audio").getAsString();
 
-                list.add(new Song(title, artist, image, audio));
+                list.add(new Song(trackId, title, artist, image, audio));
             }
+
 
             // Guarda em cache
             cache.put(tag, list);
@@ -80,6 +82,36 @@ public class JamendoFetcher {
         }
     }
 
+
+    public static List<Song> searchByArtist(String artistName) throws IOException {
+        String encoded = URLEncoder.encode(artistName, StandardCharsets.UTF_8.name());
+        String url = "https://api.jamendo.com/v3.0/artists/"
+                + "?client_id=" + CLIENT_ID
+                + "&format=json"
+                + "&search=" + encoded;
+
+        Request request = new Request.Builder().url(url).get().build();
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful() || response.body() == null)
+                throw new IOException("HTTP " + response.code());
+
+            JsonObject root = gson.fromJson(response.body().charStream(), JsonObject.class);
+            JsonArray results = root.getAsJsonArray("results");
+
+            List<Song> songs = new ArrayList<>();
+
+            for (int i = 0; i < results.size(); i++) {
+                JsonObject artist = results.get(i).getAsJsonObject();
+                String artistNameResp = artist.get("name").getAsString();
+
+                // Fetch top tracks for this artist
+                List<Song> topTracks = search(artistNameResp);
+                songs.addAll(topTracks);
+            }
+
+            return songs;
+        }
+    }
 
 
     // Opcional: limpar cache (ex: pull-to-refresh)

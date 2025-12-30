@@ -16,6 +16,12 @@
         android:theme="@style/Theme.Vibe"
         tools:targetApi="34">
         <activity
+            android:name=".UI.PlaylistDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".UI.LibraryActivity"
+            android:exported="false" />
+        <activity
             android:name=".Data.AuthActivity"
             android:exported="true">
             <intent-filter>

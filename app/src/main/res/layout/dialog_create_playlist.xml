@@ -1,0 +1,37 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/bg_app_gradient"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:text="Create playlist"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"/>
+
+    <EditText
+        android:id="@+id/etPlaylistName"
+        android:hint="Playlist name"
+        android:textColor="@android:color/white"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColorHint="#AAAAAA"
+        android:background="@drawable/bg_input_dark"/>
+
+    <TextView
+        android:id="@+id/btnCreate"
+        android:layout_marginTop="16dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="12dp"
+        android:gravity="center"
+        android:text="Create"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:background="@drawable/bg_btn_primary"/>
+</LinearLayout>

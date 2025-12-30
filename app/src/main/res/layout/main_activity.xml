@@ -2,8 +2,6 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_app_gradient">
@@ -30,7 +28,6 @@
             android:clickable="true"
             android:focusable="true"
             app:tint="@android:color/white" />
-
 
         <TextView
             android:layout_width="wrap_content"
@@ -68,6 +65,7 @@
                 app:tint="#AAAAAA" />
 
             <EditText
+                android:id="@+id/searchInput"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -75,12 +73,38 @@
                 android:hint="@string/search_artists_songs_or_moods"
                 android:textColor="@android:color/white"
                 android:textColorHint="#AAAAAA"
-                android:paddingStart="8dp"
-                tools:ignore="RtlSymmetry" />
+                android:paddingStart="8dp" />
+
+            <Spinner
+                android:id="@+id/searchFilter"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:entries="@array/search_filter_options"
+                android:spinnerMode="dropdown"
+                android:background="@drawable/bg_spinner"
+                android:popupBackground="@color/black"
+                android:padding="4dp"/>
+
+
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- CONTENT -->
+
+
+    <!-- SEARCH RESULTS -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvSearchResults"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/searchCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        android:overScrollMode="never"
+        android:clipToPadding="false"/>
+
+    <!-- MAIN CONTENT -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll"
         android:layout_width="0dp"
@@ -136,6 +160,7 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
+    <!-- BOTTOM NAVIGATION -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="0dp"
@@ -149,7 +174,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
-
 
     <!-- FLOATING MUSIC BUTTON -->
     <FrameLayout

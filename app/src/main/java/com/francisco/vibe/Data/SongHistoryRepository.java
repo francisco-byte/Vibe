@@ -18,22 +18,28 @@ public class SongHistoryRepository {
     public void save(String user, Song song) {
         SQLiteDatabase w = db.getWritableDatabase();
 
-        w.execSQL("DELETE FROM history WHERE streamUrl=?",
-                new Object[]{song.getStreamUrl()});
-
+        // Delete any previous entry of this song by trackId
         w.execSQL(
-                "INSERT INTO history (user,title,artist,imageUrl,streamUrl,playedAt) " +
-                        "VALUES (?,?,?,?,?,?)",
+                "DELETE FROM history WHERE trackId=? AND user=?",
+                new Object[]{song.getTrackId(), user}
+        );
+
+        // Insert new history record
+        w.execSQL(
+                "INSERT INTO history (user,title,artist,imageUrl,streamUrl,trackId,playedAt) " +
+                        "VALUES (?,?,?,?,?,?,?)",
                 new Object[]{
                         user,
                         song.getTitle(),
                         song.getArtist(),
                         song.getImageUrl(),
                         song.getStreamUrl(),
+                        song.getTrackId(),
                         System.currentTimeMillis()
                 }
         );
 
+        // Keep only last 20 played songs
         w.execSQL(
                 "DELETE FROM history WHERE id NOT IN (" +
                         "SELECT id FROM history WHERE user=? " +
@@ -53,10 +59,12 @@ public class SongHistoryRepository {
 
         while (c.moveToNext()) {
             list.add(new Song(
+                    c.getString(c.getColumnIndexOrThrow("trackId")),
                     c.getString(c.getColumnIndexOrThrow("title")),
                     c.getString(c.getColumnIndexOrThrow("artist")),
                     c.getString(c.getColumnIndexOrThrow("imageUrl")),
                     c.getString(c.getColumnIndexOrThrow("streamUrl"))
+
             ));
         }
 
@@ -64,4 +72,3 @@ public class SongHistoryRepository {
         return list;
     }
 }
-

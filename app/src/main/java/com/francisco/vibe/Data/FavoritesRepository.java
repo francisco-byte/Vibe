@@ -15,36 +15,42 @@ public class FavoritesRepository {
         db = new UserDatabase(c);
     }
 
-    public boolean isFavorite(String user, String streamUrl) {
+    // Check favorite using trackid
+    public boolean isFavorite(String user, String trackId) {
         Cursor c = db.getReadableDatabase().rawQuery(
-                "SELECT id FROM favorites WHERE user=? AND streamUrl=?",
-                new String[]{user, streamUrl}
+                "SELECT id FROM favorites WHERE user=? AND trackId=?",
+                new String[]{user, trackId}
         );
         boolean fav = c.moveToFirst();
         c.close();
         return fav;
     }
 
+    // Toggle favorite using trackid
     public void toggle(String user, Song song) {
         SQLiteDatabase w = db.getWritableDatabase();
 
-        if (isFavorite(user, song.getStreamUrl())) {
+        if (isFavorite(user, song.getTrackId())) {
             w.execSQL(
-                    "DELETE FROM favorites WHERE user=? AND streamUrl=?",
-                    new Object[]{user, song.getStreamUrl()}
+                    "DELETE FROM favorites WHERE user=? AND trackId=?",
+                    new Object[]{user, song.getTrackId()}
             );
         } else {
-            w.execSQL(
-                    "INSERT INTO favorites (user,title,artist,imageUrl,streamUrl) " +
-                            "VALUES (?,?,?,?,?)",
-                    new Object[]{
-                            user,
-                            song.getTitle(),
-                            song.getArtist(),
-                            song.getImageUrl(),
-                            song.getStreamUrl()
-                    }
-            );
+            // Prevent duplicate insert
+            if (!isFavorite(user, song.getTrackId())) {
+                w.execSQL(
+                        "INSERT INTO favorites (user, trackId, title, artist, imageUrl, streamUrl) " +
+                                "VALUES (?,?,?,?,?,?)",
+                        new Object[]{
+                                user,
+                                song.getTrackId(),
+                                song.getTitle(),
+                                song.getArtist(),
+                                song.getImageUrl(),
+                                song.getStreamUrl()
+                        }
+                );
+            }
         }
     }
 
@@ -58,6 +64,7 @@ public class FavoritesRepository {
 
         while (c.moveToNext()) {
             list.add(new Song(
+                    c.getString(c.getColumnIndexOrThrow("trackId")),
                     c.getString(c.getColumnIndexOrThrow("title")),
                     c.getString(c.getColumnIndexOrThrow("artist")),
                     c.getString(c.getColumnIndexOrThrow("imageUrl")),
@@ -69,3 +76,4 @@ public class FavoritesRepository {
         return list;
     }
 }
+

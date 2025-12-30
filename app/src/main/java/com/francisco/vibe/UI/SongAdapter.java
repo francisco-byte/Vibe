@@ -1,5 +1,6 @@
 package com.francisco.vibe.UI;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,15 +17,31 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
 
     private final List<Song> songs;
     private final OnSongClickListener listener;
+    private final OnSongLongClickListener longClickListener;
 
     public interface OnSongClickListener {
         void onSongClicked(Song song);
     }
 
+    public interface OnSongLongClickListener {
+        void onSongLongClicked(Song song);
+    }
+    // Existing constructor for favorites etc.
     public SongAdapter(List<Song> songs, OnSongClickListener listener) {
+        this(songs, listener, null); // pass null for long-click
+    }
+
+    // New constructor for playlists
+    public SongAdapter(List<Song> songs, OnSongClickListener listener, OnSongLongClickListener longClickListener) {
         this.songs = songs;
         this.listener = listener;
+        this.longClickListener = longClickListener;
     }
+
+    public List<Song> getSongs() {
+        return songs;
+    }
+
 
     public void setSongs(List<Song> newSongs) {
         songs.clear();
@@ -44,9 +61,21 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
         Song song = songs.get(position);
         holder.title.setText(song.getTitle());
         holder.artist.setText(song.getArtist());
+
+        Log.d("SongAdapter", "Loading image: " + song.getImageUrl());
+
         Glide.with(holder.itemView.getContext()).load(song.getImageUrl()).into(holder.cover);
+
         holder.itemView.setOnClickListener(v -> listener.onSongClicked(song));
+
+        if (longClickListener != null) {
+            holder.itemView.setOnLongClickListener(v -> {
+                longClickListener.onSongLongClicked(song);
+                return true; // consume the event
+            });
+        }
     }
+
 
     @Override
     public int getItemCount() {

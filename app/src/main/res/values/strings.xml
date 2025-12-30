@@ -3,5 +3,9 @@
     <string name="search_artists_songs_or_moods">Search artists, songs, or moods</string>
     <string name="popular_at_the_moment">Popular at the moment</string>
     <string name="title_activity_profile">ProfileActivity</string>
-
+    <string-array name="search_filter_options">
+        <item>All</item>
+        <item>Mood</item>
+        <item>Artist</item>
+    </string-array>
 </resources>

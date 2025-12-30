@@ -18,7 +18,22 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"/>
 
+
     <!-- FAVORITE -->
+
+    <ImageButton
+        android:id="@+id/btnAddToPlaylist"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Add to Playlist"
+        android:src="@drawable/ic_add_playlist"
+        app:layout_constraintEnd_toStartOf="@id/btnFavorite"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@android:color/white" />
+
     <ImageView
         android:id="@+id/btnFavorite"
         android:layout_width="24dp"
