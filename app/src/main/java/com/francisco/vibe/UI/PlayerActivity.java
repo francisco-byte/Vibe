@@ -13,7 +13,10 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.LoadControl;
 
 import com.bumptech.glide.Glide;
 import com.francisco.vibe.Data.FavoritesRepository;
@@ -27,19 +30,25 @@ import com.francisco.vibe.databinding.ActivityPlayerBinding;
 import java.util.ArrayList;
 import java.util.List;
 
+@UnstableApi
 public class PlayerActivity extends AppCompatActivity {
 
     private ActivityPlayerBinding binding;
     private ExoPlayer player;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
-    private boolean isRepeat = false;
-    private boolean isShuffle = false;
-    private boolean isFavorite = false;
-
     private FavoritesRepository favoritesRepo;
     private Song currentSong;
     private String currentUser;
+
+    // Lista que bate 1:1 com os MediaItems (só músicas tocáveis)
+    private List<Song> songs = new ArrayList<>();
+
+    // Evita autoplay repetido
+    private boolean autoPlayed = false;
+
+    // Estado favorito
+    private boolean isFavorite = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,97 +68,162 @@ public class PlayerActivity extends AppCompatActivity {
         int playlistId = getIntent().getIntExtra("playlistId", -1);
         int startIndex = getIntent().getIntExtra("startIndex", 0);
 
-        List<Song> songs = new ArrayList<>();
+        List<Song> rawSongs = new ArrayList<>();
 
         if (playlistId != -1) {
             PlaylistSongsRepository repo = new PlaylistSongsRepository(this);
-            songs = repo.getSongs(playlistId);
+            rawSongs = repo.getSongs(playlistId);
         } else if (trackId != null) {
-            currentSong = new Song(trackId, title, artist, imageUrl, streamUrl);
-            songs.add(currentSong);
+            rawSongs.add(new Song(trackId, title, artist, imageUrl, streamUrl));
         }
 
-        // ===== INITIALIZE PLAYER =====
-        player = new ExoPlayer.Builder(this).build();
+        // ===== LOAD CONTROL (buffer maior -> menos cortes/estalos) =====
+        LoadControl loadControl = new DefaultLoadControl.Builder()
+                .setBufferDurationsMs(
+                        15000, // minBufferMs
+                        60000, // maxBufferMs
+                        2500,  // bufferForPlaybackMs
+                        6000   // bufferForPlaybackAfterRebufferMs
+                )
+                .build();
 
-        // ===== ADD MEDIA ITEMS =====
+        // ===== INITIALIZE PLAYER =====
+        player = new ExoPlayer.Builder(this)
+                .setLoadControl(loadControl)
+                .build();
+
+        // estado inicial consistente
+        player.setShuffleModeEnabled(false);
+        player.setRepeatMode(Player.REPEAT_MODE_OFF);
+
+        // ===== ADD MEDIA ITEMS (e criar lista tocável em paralelo) =====
         List<MediaItem> mediaItems = new ArrayList<>();
-        for (Song s : songs) {
+        List<Song> playableSongs = new ArrayList<>();
+
+        for (Song s : rawSongs) {
             if (s.getStreamUrl() != null && !s.getStreamUrl().isEmpty()) {
-                mediaItems.add(new MediaItem.Builder()
+                playableSongs.add(s);
+
+                MediaItem item = new MediaItem.Builder()
                         .setUri(s.getStreamUrl())
                         .setMediaMetadata(
                                 new MediaMetadata.Builder()
                                         .setTitle(s.getTitle())
                                         .setArtist(s.getArtist())
-                                        .setArtworkUri(Uri.parse(s.getImageUrl()))
+                                        .setArtworkUri(
+                                                (s.getImageUrl() != null && !s.getImageUrl().isEmpty())
+                                                        ? Uri.parse(s.getImageUrl())
+                                                        : null
+                                        )
                                         .build()
                         )
-                        .build()
-                );
+                        .build();
+
+                mediaItems.add(item);
             } else {
                 Toast.makeText(this, "Track unavailable: " + s.getTitle(), Toast.LENGTH_SHORT).show();
             }
         }
 
+        // agora songs = playableSongs (índices batem certo com o player)
+        songs = playableSongs;
+
         if (!mediaItems.isEmpty()) {
-            player.setMediaItems(mediaItems, startIndex, 0);
+            int safeStartIndex = Math.max(0, Math.min(startIndex, mediaItems.size() - 1));
+            player.setMediaItems(mediaItems, safeStartIndex, 0);
             player.prepare();
+        } else {
+            Toast.makeText(this, "No playable tracks.", Toast.LENGTH_SHORT).show();
         }
 
         // ===== PLAYER LISTENER =====
         player.addListener(new Player.Listener() {
+
             @Override
             public void onPlaybackStateChanged(int state) {
-                if (state == Player.STATE_READY && !player.isPlaying()) {
-                    player.play(); // auto-play when ready
+                if (state == Player.STATE_READY && !autoPlayed) {
+                    player.play();
+                    autoPlayed = true;
                     binding.btnPlay.setImageResource(R.drawable.pause_button);
                 } else if (state == Player.STATE_ENDED) {
+
+                    // Fallback: se Repeat ALL estiver ligado, força voltar ao início
+                    if (player != null && player.getRepeatMode() == Player.REPEAT_MODE_ALL) {
+                        player.seekTo(0, 0);
+                        player.prepare();
+                        player.play();
+                        return;
+                    }
+
                     binding.btnPlay.setImageResource(R.drawable.ic_play_filled_24);
                 }
             }
 
             @Override
+            public void onIsLoadingChanged(boolean isLoading) {
+                binding.btnPlay.setEnabled(!isLoading);
+                binding.btnNext.setEnabled(!isLoading);
+                binding.btnPrev.setEnabled(!isLoading);
+            }
+
+            @Override
             public void onPlayerError(PlaybackException error) {
                 Toast.makeText(PlayerActivity.this, "Cannot play track", Toast.LENGTH_SHORT).show();
+
+                // tenta recuperar: salta para a próxima se existir
+                if (player != null && player.hasNextMediaItem()) {
+                    player.seekToNextMediaItem();
+                    player.prepare();
+                    player.play();
+                } else if (player != null) {
+                    // se não houver próxima, tenta recomeçar
+                    player.seekTo(0);
+                    player.prepare();
+                    player.play();
+                }
             }
 
             @Override
             public void onMediaItemTransition(MediaItem mediaItem, int reason) {
-                MediaMetadata meta = mediaItem.mediaMetadata;
-                currentSong = new Song(
-                        "",
-                        meta.title != null ? meta.title.toString() : "",
-                        meta.artist != null ? meta.artist.toString() : "",
-                        meta.artworkUri != null ? meta.artworkUri.toString() : "",
-                        mediaItem.localConfiguration != null ? mediaItem.localConfiguration.uri.toString() : ""
-                );
-                updateUIForSong(currentSong);
+                // usar o índice do player para ir buscar a Song real (com trackId)
+                int idx = player.getCurrentMediaItemIndex();
+                if (idx >= 0 && idx < songs.size()) {
+                    currentSong = songs.get(idx);
+                    updateUIForSong(currentSong);
+                }
             }
         });
 
         // ===== SETUP UI FOR FIRST SONG =====
         if (!songs.isEmpty()) {
-            currentSong = songs.get(Math.min(startIndex, songs.size() - 1));
+            int idx = Math.max(0, Math.min(startIndex, songs.size() - 1));
+            currentSong = songs.get(idx);
             updateUIForSong(currentSong);
         }
 
         setupControls();
         binding.btnAddToPlaylist.setOnClickListener(v -> showAddToPlaylistDialog());
+
+        // garante que os botões começam com UI correta
+        syncToggleButtonsUI();
+
         startSeekBarUpdate();
     }
 
     private void updateUIForSong(Song song) {
         binding.songTitle.setText(song.getTitle());
         binding.songArtist.setText(song.getArtist());
-        Glide.with(this).load(song.getImageUrl()).into(binding.headerArt);
+
+        Glide.with(this)
+                .load(song.getImageUrl())
+                .into(binding.headerArt);
 
         isFavorite = favoritesRepo.isFavorite(currentUser, song.getTrackId());
         updateFavoriteIcon();
     }
 
     private void setupControls() {
-        // ===== CUSTOM BACK BUTTON =====
+
         binding.btnBack.setOnClickListener(v -> {
             feedback(v);
             stopPlayerAndCleanup();
@@ -158,6 +232,7 @@ public class PlayerActivity extends AppCompatActivity {
 
         binding.btnFavorite.setOnClickListener(v -> {
             feedback(v);
+            if (currentSong == null) return;
             favoritesRepo.toggle(currentUser, currentSong);
             isFavorite = favoritesRepo.isFavorite(currentUser, currentSong.getTrackId());
             updateFavoriteIcon();
@@ -166,6 +241,7 @@ public class PlayerActivity extends AppCompatActivity {
         binding.btnPlay.setOnClickListener(v -> {
             feedback(v);
             if (player == null) return;
+
             if (player.isPlaying()) {
                 player.pause();
                 binding.btnPlay.setImageResource(R.drawable.ic_play_filled_24);
@@ -177,26 +253,48 @@ public class PlayerActivity extends AppCompatActivity {
 
         binding.btnPrev.setOnClickListener(v -> {
             feedback(v);
-            if (player.hasPreviousMediaItem()) player.seekToPreviousMediaItem();
+            if (player != null && player.hasPreviousMediaItem()) {
+                player.seekToPreviousMediaItem();
+            }
         });
 
         binding.btnNext.setOnClickListener(v -> {
             feedback(v);
-            if (player.hasNextMediaItem()) player.seekToNextMediaItem();
+            if (player != null && player.hasNextMediaItem()) {
+                player.seekToNextMediaItem();
+            }
         });
 
         binding.btnShuffle.setOnClickListener(v -> {
             feedback(v);
-            isShuffle = !isShuffle;
-            player.setShuffleModeEnabled(isShuffle);
-            binding.btnShuffle.setAlpha(isShuffle ? 1f : 0.4f);
+            if (player == null) return;
+
+            boolean enabled = !player.getShuffleModeEnabled();
+            player.setShuffleModeEnabled(enabled);
+            syncToggleButtonsUI();
         });
 
+        // ✅ Repeat OFF -> ONE -> ALL (loop música -> loop playlist)
         binding.btnRepeat.setOnClickListener(v -> {
             feedback(v);
-            isRepeat = !isRepeat;
-            player.setRepeatMode(isRepeat ? Player.REPEAT_MODE_ALL : Player.REPEAT_MODE_OFF);
-            binding.btnRepeat.setAlpha(isRepeat ? 1f : 0.4f);
+            if (player == null) return;
+
+            int mode = player.getRepeatMode();
+            int newMode;
+
+            if (mode == Player.REPEAT_MODE_OFF) {
+                newMode = Player.REPEAT_MODE_ONE;  // loop na música atual
+                Toast.makeText(this, "Repeat one", Toast.LENGTH_SHORT).show();
+            } else if (mode == Player.REPEAT_MODE_ONE) {
+                newMode = Player.REPEAT_MODE_ALL;  // loop playlist inteira
+                Toast.makeText(this, "Repeat all", Toast.LENGTH_SHORT).show();
+            } else {
+                newMode = Player.REPEAT_MODE_OFF;
+                Toast.makeText(this, "Repeat off", Toast.LENGTH_SHORT).show();
+            }
+
+            player.setRepeatMode(newMode);
+            syncToggleButtonsUI();
         });
 
         binding.seekBar.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
@@ -210,24 +308,38 @@ public class PlayerActivity extends AppCompatActivity {
         });
     }
 
+    private void syncToggleButtonsUI() {
+        if (player == null) return;
+        binding.btnShuffle.setAlpha(player.getShuffleModeEnabled() ? 1f : 0.4f);
+        binding.btnRepeat.setAlpha(player.getRepeatMode() != Player.REPEAT_MODE_OFF ? 1f : 0.4f);
+    }
+
     private void showAddToPlaylistDialog() {
+        if (currentSong == null) return;
+
         PlaylistRepository playlistRepo = new PlaylistRepository(this);
         var playlists = playlistRepo.getAll(currentUser);
+
         if (playlists.isEmpty()) {
-            new AlertDialog.Builder(this).setTitle("No Playlists")
+            new AlertDialog.Builder(this)
+                    .setTitle("No Playlists")
                     .setMessage("You don't have any playlists. Create one first!")
-                    .setPositiveButton("OK", null).show();
+                    .setPositiveButton("OK", null)
+                    .show();
             return;
         }
 
         String[] playlistNames = new String[playlists.size()];
-        for (int i = 0; i < playlists.size(); i++) playlistNames[i] = playlists.get(i).getName();
+        for (int i = 0; i < playlists.size(); i++) {
+            playlistNames[i] = playlists.get(i).getName();
+        }
 
         new AlertDialog.Builder(this)
                 .setTitle("Add to Playlist")
                 .setItems(playlistNames, (dialog, which) -> {
                     int playlistId = playlists.get(which).getId();
                     PlaylistSongsRepository repo = new PlaylistSongsRepository(this);
+
                     boolean added = repo.addSong(playlistId, currentSong);
                     Toast.makeText(this,
                             added ? "Song added to playlist" : "Song already in playlist",
@@ -243,6 +355,7 @@ public class PlayerActivity extends AppCompatActivity {
                 if (player != null) {
                     long position = player.getCurrentPosition();
                     long duration = player.getDuration();
+
                     if (duration > 0) {
                         binding.seekBar.setMax((int) duration);
                         binding.seekBar.setProgress((int) position);

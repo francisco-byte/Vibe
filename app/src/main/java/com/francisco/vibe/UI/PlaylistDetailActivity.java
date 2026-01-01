@@ -3,9 +3,11 @@ package com.francisco.vibe.UI;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.annotation.OptIn;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.media3.common.util.UnstableApi;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.francisco.vibe.Data.PlaylistSongsRepository;
@@ -84,6 +86,7 @@ public class PlaylistDetailActivity extends AppCompatActivity
         adapter.setSongs(songs);
     }
 
+    @OptIn(markerClass = UnstableApi.class)
     @Override
     public void onSongClicked(Song song) {
         Intent intent = new Intent(this, PlayerActivity.class);

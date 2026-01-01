@@ -3,8 +3,10 @@ package com.francisco.vibe.UI;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.media3.common.util.UnstableApi;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.francisco.vibe.Data.FavoritesRepository;
@@ -91,6 +93,7 @@ public class LibraryActivity extends AppCompatActivity {
     // -------------------------
     // RECYCLERS
     // -------------------------
+    @OptIn(markerClass = UnstableApi.class)
     private void setupRecyclerViews() {
 
         favoritesAdapter = new SongAdapter(
