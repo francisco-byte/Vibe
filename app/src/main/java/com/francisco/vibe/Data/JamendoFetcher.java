@@ -28,12 +28,15 @@ public class JamendoFetcher {
 
     private static final Gson gson = new Gson();
 
-    // Cache simples por tag
     private static final Map<String, List<Song>> cache = new HashMap<>();
 
+    /**
+     * Pesquisa músicas na API Jamendo com base numa tag fornecida.
+     * Os resultados são armazenados em cache para evitar pedidos repetidos
+     * e melhorar o desempenho da aplicação.
+     */
     public static List<Song> search(String tag) throws IOException {
 
-        // Cache hit
         if (cache.containsKey(tag)) {
             return cache.get(tag);
         }
@@ -66,7 +69,7 @@ public class JamendoFetcher {
             for (int i = 0; i < results.size(); i++) {
                 JsonObject track = results.get(i).getAsJsonObject();
 
-                String trackId = track.get("id").getAsString(); // NEW
+                String trackId = track.get("id").getAsString();
                 String title = track.get("name").getAsString();
                 String artist = track.get("artist_name").getAsString();
                 String image = track.get("album_image").getAsString();
@@ -75,14 +78,15 @@ public class JamendoFetcher {
                 list.add(new Song(trackId, title, artist, image, audio));
             }
 
-
-            // Guarda em cache
             cache.put(tag, list);
             return list;
         }
     }
 
-
+    /**
+     * Pesquisa artistas na API Jamendo e obtém as músicas associadas
+     * a cada artista encontrado, devolvendo uma lista agregada de músicas.
+     */
     public static List<Song> searchByArtist(String artistName) throws IOException {
         String encoded = URLEncoder.encode(artistName, StandardCharsets.UTF_8.name());
         String url = "https://api.jamendo.com/v3.0/artists/"
@@ -104,7 +108,6 @@ public class JamendoFetcher {
                 JsonObject artist = results.get(i).getAsJsonObject();
                 String artistNameResp = artist.get("name").getAsString();
 
-                // Fetch top tracks for this artist
                 List<Song> topTracks = search(artistNameResp);
                 songs.addAll(topTracks);
             }
@@ -113,8 +116,9 @@ public class JamendoFetcher {
         }
     }
 
-
-    // Opcional: limpar cache (ex: pull-to-refresh)
+    /**
+     * Limpa a cache interna de músicas.
+     */
     public static void clearCache() {
         cache.clear();
     }

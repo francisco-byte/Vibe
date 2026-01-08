@@ -53,8 +53,13 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
     private final ExecutorService executor = Executors.newFixedThreadPool(4);
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    private String currentFilter = "All"; // default search filter
+    private String currentFilter = "All";
 
+    /**
+     * Inicializa o ecrã principal da aplicação.
+     * Valida a sessão do utilizador, configura a navegação, prepara os RecyclerViews,
+     * inicializa a pesquisa com filtro e carrega os dados iniciais (populares e histórico).
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
@@ -63,7 +68,6 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
         binding = MainActivityBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // 🔐 SESSION CHECK
         currentUser = SessionManager.getUsername(this);
         if (currentUser == null) {
             startActivity(new Intent(this, AuthActivity.class));
@@ -71,18 +75,14 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
             return;
         }
 
-        // 👤 PROFILE
         binding.btnProfile.setOnClickListener(v ->
                 startActivity(new Intent(this, ProfileActivity.class))
         );
 
-        // 🧭 BOTTOM NAV
         setupBottomNav();
 
-        // DB REPO
         historyRepo = new SongHistoryRepository(this);
 
-        // SYSTEM INSETS (bottom nav safe)
         ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNav, (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
             v.setPadding(0, 0, 0, bars.bottom);
@@ -94,9 +94,10 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
         loadAllSections();
     }
 
-    // -------------------------
-    // BOTTOM NAVIGATION
-    // -------------------------
+    /**
+     * Configura a navegação inferior (Bottom Navigation),
+     * permitindo alternar entre o ecrã principal e a biblioteca.
+     */
     private void setupBottomNav() {
         binding.bottomNav.setSelectedItemId(R.id.nav_home);
         binding.bottomNav.setOnItemSelectedListener(item -> {
@@ -110,38 +111,39 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
         });
     }
 
-    // -------------------------
-    // RECYCLERVIEWS
-    // -------------------------
+    /**
+     * Configura os RecyclerViews do ecrã principal:
+     * - Músicas populares
+     * - Secção "ouvir novamente" (histórico)
+     * - Resultados de pesquisa
+     */
     private void setupRecyclerViews() {
-        // POPULAR
         popularAdapter = new SongAdapter(new ArrayList<>(), this);
         binding.rvPopular.setLayoutManager(new LinearLayoutManager(this));
         binding.rvPopular.setAdapter(popularAdapter);
 
-        // LISTEN AGAIN
         historyAdapter = new SongAdapter(new ArrayList<>(), this);
         binding.rvListenAgain.setLayoutManager(new GridLayoutManager(this, 2));
         binding.rvListenAgain.setAdapter(historyAdapter);
 
-        // SEARCH RESULTS
         searchAdapter = new SongAdapter(new ArrayList<>(), this);
         RecyclerView rvSearch = binding.rvSearchResults;
         rvSearch.setLayoutManager(new LinearLayoutManager(this));
         rvSearch.setAdapter(searchAdapter);
     }
 
-    // -------------------------
-    // SEARCH BAR + FILTER
-    // -------------------------
+    /**
+     * Configura a barra de pesquisa e o filtro (Spinner).
+     * Sempre que o utilizador altera o texto ou o filtro, é executada uma pesquisa
+     * e os resultados são apresentados no RecyclerView dedicado.
+     */
     private void setupSearchBarWithFilter() {
         EditText searchInput = binding.searchInput;
 
-        // Optional: Add a spinner in your XML as `spinnerFilter`
         Spinner spinner = binding.searchFilter;
         ArrayAdapter<CharSequence> filterAdapter = ArrayAdapter.createFromResource(
                 this,
-                R.array.search_filter_options, // e.g., All, Mood, Artist
+                R.array.search_filter_options,
                 android.R.layout.simple_spinner_item
         );
         filterAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -173,9 +175,17 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
         });
     }
 
+    /**
+     * Obtém o filtro atualmente selecionado no Spinner da pesquisa.
+     */
     private String getSelectedFilter() {
         return binding.searchFilter.getSelectedItem().toString();
     }
+
+    /**
+     * Executa a pesquisa na API Jamendo de acordo com o filtro selecionado.
+     * A pesquisa é feita em background e os resultados são apresentados na interface.
+     */
     private void performSearch(String query) {
         binding.rvSearchResults.setVisibility(android.view.View.VISIBLE);
         binding.scroll.setVisibility(android.view.View.GONE);
@@ -190,10 +200,10 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
                         results = JamendoFetcher.searchByArtist(query);
                         break;
                     case "Mood":
-                        results = JamendoFetcher.search(query); // mood search
+                        results = JamendoFetcher.search(query);
                         break;
                     default:
-                        results = JamendoFetcher.search(query); // normal track search
+                        results = JamendoFetcher.search(query);
                         break;
                 }
 
@@ -206,12 +216,12 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
         });
     }
 
-
-    // -------------------------
-    // LOAD DATA
-    // -------------------------
+    /**
+     * Carrega os dados principais do ecrã:
+     * - Lista de músicas populares (via API)
+     * - Histórico do utilizador (via base de dados local)
+     */
     private void loadAllSections() {
-        // POPULAR SONGS
         executor.execute(() -> {
             try {
                 List<Song> popular = JamendoFetcher.search("popular");
@@ -223,16 +233,16 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
             }
         });
 
-        // HISTORY
         executor.execute(() -> {
             List<Song> history = historyRepo.getLast(currentUser, 6);
             mainHandler.post(() -> historyAdapter.setSongs(history));
         });
     }
 
-    // -------------------------
-    // CLICK SONG
-    // -------------------------
+    /**
+     * Trata o clique numa música apresentada no ecrã principal.
+     * Guarda a música no histórico e abre o PlayerActivity para iniciar a reprodução.
+     */
     @Override
     public void onSongClicked(Song song) {
         executor.execute(() -> historyRepo.save(currentUser, song));
@@ -247,9 +257,10 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
         startActivity(intent);
     }
 
-    // -------------------------
-    // LIFECYCLE
-    // -------------------------
+    /**
+     * Atualiza a secção do histórico quando a Activity volta a ficar ativa,
+     * garantindo que a informação apresentada se mantém atualizada.
+     */
     @Override
     protected void onResume() {
         super.onResume();
@@ -259,6 +270,9 @@ public class Main extends AppCompatActivity implements SongAdapter.OnSongClickLi
         });
     }
 
+    /**
+     * Liberta recursos ao terminar a Activity, encerrando o ExecutorService.
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();

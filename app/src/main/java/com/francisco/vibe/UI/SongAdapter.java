@@ -6,11 +6,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.francisco.vibe.Data.Song;
 import com.francisco.vibe.R;
+
 import java.util.List;
 
 public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
@@ -19,36 +22,59 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
     private final OnSongClickListener listener;
     private final OnSongLongClickListener longClickListener;
 
+    /**
+     * Interface responsável por definir o comportamento
+     * quando uma música é selecionada pelo utilizador.
+     */
     public interface OnSongClickListener {
         void onSongClicked(Song song);
     }
 
+    /**
+     * Interface responsável por definir o comportamento
+     * quando uma música é pressionada de forma prolongada.
+     */
     public interface OnSongLongClickListener {
         void onSongLongClicked(Song song);
     }
-    // Existing constructor for favorites etc.
+
+    /**
+     * Construtor utilizado em listas que não necessitam de clique prolongado,
+     * como por exemplo a lista de favoritos.
+     */
     public SongAdapter(List<Song> songs, OnSongClickListener listener) {
-        this(songs, listener, null); // pass null for long-click
+        this(songs, listener, null);
     }
 
-    // New constructor for playlists
+    /**
+     * Construtor utilizado em listas que necessitam de clique normal e clique prolongado,
+     * como por exemplo a gestão de músicas dentro de uma playlist.
+     */
     public SongAdapter(List<Song> songs, OnSongClickListener listener, OnSongLongClickListener longClickListener) {
         this.songs = songs;
         this.listener = listener;
         this.longClickListener = longClickListener;
     }
 
+    /**
+     * Devolve a lista de músicas atualmente associada ao adapter.
+     */
     public List<Song> getSongs() {
         return songs;
     }
 
-
+    /**
+     * Atualiza o conteúdo da lista de músicas e força a atualização do RecyclerView.
+     */
     public void setSongs(List<Song> newSongs) {
         songs.clear();
         songs.addAll(newSongs);
         notifyDataSetChanged();
     }
 
+    /**
+     * Cria e devolve um ViewHolder associado ao layout de cada item de música.
+     */
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -56,13 +82,15 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
         return new ViewHolder(view);
     }
 
+    /**
+     * Associa os dados de uma música ao item do RecyclerView,
+     * carregando o título, artista e capa, e configurando os eventos de clique.
+     */
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Song song = songs.get(position);
         holder.title.setText(song.getTitle());
         holder.artist.setText(song.getArtist());
-
-        Log.d("SongAdapter", "Loading image: " + song.getImageUrl());
 
         Glide.with(holder.itemView.getContext()).load(song.getImageUrl()).into(holder.cover);
 
@@ -71,20 +99,30 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
         if (longClickListener != null) {
             holder.itemView.setOnLongClickListener(v -> {
                 longClickListener.onSongLongClicked(song);
-                return true; // consume the event
+                return true;
             });
         }
     }
 
-
+    /**
+     * Devolve o número total de músicas existentes na lista.
+     */
     @Override
     public int getItemCount() {
         return songs.size();
     }
 
+    /**
+     * ViewHolder responsável por manter as referências aos elementos visuais
+     * de cada item de música apresentado na lista.
+     */
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView title, artist;
         ImageView cover;
+
+        /**
+         * Inicializa os componentes visuais do item de música.
+         */
         ViewHolder(View itemView) {
             super(itemView);
             title = itemView.findViewById(R.id.song_title);

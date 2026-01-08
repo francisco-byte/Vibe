@@ -18,6 +18,7 @@ import com.francisco.vibe.Data.Song;
 import com.francisco.vibe.Main;
 import com.francisco.vibe.R;
 import com.francisco.vibe.databinding.ActivityLibraryBinding;
+
 import android.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.widget.EditText;
@@ -35,6 +36,11 @@ public class LibraryActivity extends AppCompatActivity {
     private SongAdapter favoritesAdapter;
     private PlaylistAdapter playlistAdapter;
 
+    /**
+     * Inicializa a LibraryActivity.
+     * Define o modo noturno, configura o binding, valida a sessão do utilizador,
+     * inicializa os repositórios e prepara os componentes da interface.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -50,7 +56,6 @@ public class LibraryActivity extends AppCompatActivity {
                 showCreatePlaylistDialog()
         );
 
-        // 🔐 SESSION
         currentUser = SessionManager.getUsername(this);
         if (currentUser == null) {
             finish();
@@ -67,9 +72,10 @@ public class LibraryActivity extends AppCompatActivity {
         loadPlaylists();
     }
 
-    // -------------------------
-    // BOTTOM NAV
-    // -------------------------
+    /**
+     * Configura a navegação inferior (Bottom Navigation),
+     * permitindo alternar entre as secções principais da aplicação.
+     */
     private void setupBottomNav() {
 
         binding.bottomNav.setSelectedItemId(R.id.nav_library);
@@ -90,9 +96,12 @@ public class LibraryActivity extends AppCompatActivity {
         });
     }
 
-    // -------------------------
-    // RECYCLERS
-    // -------------------------
+    /**
+     * Configura os RecyclerViews da biblioteca:
+     * - Lista de favoritos
+     * - Lista de playlists
+     * Define os adapters e os comportamentos de clique em cada item.
+     */
     @OptIn(markerClass = UnstableApi.class)
     private void setupRecyclerViews() {
 
@@ -101,13 +110,11 @@ public class LibraryActivity extends AppCompatActivity {
                 song -> {
                     Intent intent = new Intent(LibraryActivity.this, PlayerActivity.class);
 
-                    // Pass song details via Intent extras
                     intent.putExtra("trackId", song.getTrackId());
                     intent.putExtra("title", song.getTitle());
                     intent.putExtra("artist", song.getArtist());
                     intent.putExtra("imageUrl", song.getImageUrl());
                     intent.putExtra("streamUrl", song.getStreamUrl());
-
 
                     startActivity(intent);
                 }
@@ -119,7 +126,6 @@ public class LibraryActivity extends AppCompatActivity {
 
         binding.rvFavorites.setAdapter(favoritesAdapter);
 
-        //  PLAYLISTS
         playlistAdapter = new PlaylistAdapter(
                 new ArrayList<>(),
                 playlist -> {
@@ -136,9 +142,11 @@ public class LibraryActivity extends AppCompatActivity {
         binding.rvPlaylists.setAdapter(playlistAdapter);
     }
 
-    // -------------------------
-    // Create Playlists
-    // -------------------------
+    /**
+     * Apresenta um diálogo para criação de uma nova playlist.
+     * Permite ao utilizador introduzir o nome e, caso seja válido,
+     * guarda a playlist na base de dados e atualiza a lista apresentada.
+     */
     private void showCreatePlaylistDialog() {
 
         LayoutInflater inflater = LayoutInflater.from(this);
@@ -170,25 +178,34 @@ public class LibraryActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // -------------------------
-    // LOAD DATA
-    // -------------------------
+    /**
+     * Carrega a lista de músicas favoritas do utilizador
+     * e atualiza o adapter correspondente.
+     */
     private void loadFavorites() {
         favoritesAdapter.setSongs(
                 favoritesRepo.getAll(currentUser)
         );
     }
 
+    /**
+     * Carrega a lista de playlists do utilizador
+     * e atualiza o adapter correspondente.
+     */
     private void loadPlaylists() {
         playlistAdapter.setPlaylists(
                 playlistRepo.getAll(currentUser)
         );
     }
 
+    /**
+     * Método chamado quando a Activity volta a ficar visível.
+     * Recarrega os favoritos para garantir que a informação apresentada
+     * está atualizada após regressar de outras ecrãs.
+     */
     @Override
     protected void onResume() {
         super.onResume();
-        // Reload favorites each time the activity resumes
         loadFavorites();
     }
 

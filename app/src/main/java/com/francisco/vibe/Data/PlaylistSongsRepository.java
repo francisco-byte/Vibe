@@ -11,10 +11,18 @@ public class PlaylistSongsRepository {
 
     private final UserDatabase db;
 
+    /**
+     * Construtor do repositório de músicas das playlists.
+     * Inicializa o acesso à base de dados da aplicação.
+     */
     public PlaylistSongsRepository(Context context) {
         db = new UserDatabase(context);
     }
 
+    /**
+     * Obtém todas as músicas associadas a uma determinada playlist,
+     * devolvendo uma lista de objetos Song.
+     */
     public List<Song> getSongs(int playlistId) {
         List<Song> list = new ArrayList<>();
         SQLiteDatabase rdb = db.getReadableDatabase();
@@ -31,7 +39,6 @@ public class PlaylistSongsRepository {
                     c.getString(c.getColumnIndexOrThrow("artist")),
                     c.getString(c.getColumnIndexOrThrow("imageUrl")),
                     c.getString(c.getColumnIndexOrThrow("streamUrl"))
-
             ));
         }
 
@@ -39,10 +46,14 @@ public class PlaylistSongsRepository {
         return list;
     }
 
+    /**
+     * Adiciona uma música a uma playlist, verificando previamente
+     * se a música já existe nessa playlist.
+     * Devolve o resultado da operação.
+     */
     public boolean addSong(int playlistId, Song song) {
         SQLiteDatabase wdb = db.getWritableDatabase();
 
-        // Check if song already exists in this playlist by trackId
         Cursor c = wdb.rawQuery(
                 "SELECT 1 FROM playlist_songs WHERE playlistId=? AND trackId=?",
                 new String[]{String.valueOf(playlistId), song.getTrackId()}
@@ -52,7 +63,7 @@ public class PlaylistSongsRepository {
         c.close();
 
         if (exists) {
-            return false; // song already exists
+            return false;
         }
 
         wdb.execSQL(
@@ -67,9 +78,13 @@ public class PlaylistSongsRepository {
                 }
         );
 
-        return true; // successfully added
+        return true;
     }
 
+    /**
+     * Remove uma música de uma playlist específica,
+     * com base no identificador da playlist e da música.
+     */
     public void removeSongFromPlaylist(int playlistId, Song song) {
         db.getWritableDatabase().execSQL(
                 "DELETE FROM playlist_songs WHERE playlistId=? AND trackId=?",

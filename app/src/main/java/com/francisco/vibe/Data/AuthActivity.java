@@ -21,6 +21,11 @@ public class AuthActivity extends AppCompatActivity {
 
     private AuthViewModel viewModel;
 
+    /**
+     * Inicializa a Activity de autenticação.
+     * Se o utilizador já estiver autenticado (sessão ativa), redireciona diretamente para a Main.
+     * Caso contrário, configura a interface, inicializa o ViewModel e define os listeners dos botões.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,6 +59,10 @@ public class AuthActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Aplica uma animação de "press" (scale) e feedback háptico ao elemento clicado,
+     * para melhorar a experiência de interação do utilizador.
+     */
     private void press(View v) {
         v.animate()
                 .scaleX(0.96f)
@@ -73,6 +82,10 @@ public class AuthActivity extends AppCompatActivity {
         );
     }
 
+    /**
+     * Faz a transição de texto num TextView com animação de fade-out e fade-in,
+     * atualizando o conteúdo de forma suave.
+     */
     private void animateTextChange(TextView tv, String text) {
         tv.animate()
                 .alpha(0f)
@@ -84,7 +97,11 @@ public class AuthActivity extends AppCompatActivity {
                 .start();
     }
 
-
+    /**
+     * Alterna entre o modo "Login" e o modo "Registo".
+     * No registo, mostra os campos extra (ex: confirmação de password) e altera os textos dos botões.
+     * No login, esconde os campos extra e repõe os textos originais.
+     */
     private void toggleMode(TextView actionBtn) {
         isRegister = !isRegister;
 
@@ -97,10 +114,9 @@ public class AuthActivity extends AppCompatActivity {
                     .setDuration(200)
                     .start();
 
-           animateTextChange(actionBtn, "Register");
+            animateTextChange(actionBtn, "Register");
 
-           animateTextChange(findViewById(R.id.switchMode), "Already have an account? Log in");
-
+            animateTextChange(findViewById(R.id.switchMode), "Already have an account? Log in");
 
         } else {
             registerExtra.animate()
@@ -118,8 +134,12 @@ public class AuthActivity extends AppCompatActivity {
         }
     }
 
-
-
+    /**
+     * Executa a ação principal consoante o modo atual:
+     * - Login: valida campos e tenta autenticar o utilizador.
+     * - Registo: valida campos, confirma password e tenta criar um novo utilizador.
+     * Em caso de sucesso, guarda a sessão e redireciona para a Main.
+     */
     private void handleAction() {
         String user = etUsername.getText().toString().trim();
         String pass = etPassword.getText().toString().trim();
@@ -156,6 +176,9 @@ public class AuthActivity extends AppCompatActivity {
         finish();
     }
 
+    /**
+     * Mostra uma mensagem curta (Toast) ao utilizador.
+     */
     private void toast(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }

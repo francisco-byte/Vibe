@@ -11,20 +11,28 @@ public class SongHistoryRepository {
 
     private final UserDatabase db;
 
+    /**
+     * Construtor do repositório de histórico de músicas.
+     * Inicializa o acesso à base de dados da aplicação.
+     */
     public SongHistoryRepository(Context c) {
         db = new UserDatabase(c);
     }
 
+    /**
+     * Guarda uma música no histórico de reprodução do utilizador.
+     * Caso a música já exista no histórico, a entrada anterior é removida
+     * para atualizar a data da última reprodução.
+     * O histórico é limitado às últimas 20 músicas reproduzidas.
+     */
     public void save(String user, Song song) {
         SQLiteDatabase w = db.getWritableDatabase();
 
-        // Delete any previous entry of this song by trackId
         w.execSQL(
                 "DELETE FROM history WHERE trackId=? AND user=?",
                 new Object[]{song.getTrackId(), user}
         );
 
-        // Insert new history record
         w.execSQL(
                 "INSERT INTO history (user,title,artist,imageUrl,streamUrl,trackId,playedAt) " +
                         "VALUES (?,?,?,?,?,?,?)",
@@ -39,7 +47,6 @@ public class SongHistoryRepository {
                 }
         );
 
-        // Keep only last 20 played songs
         w.execSQL(
                 "DELETE FROM history WHERE id NOT IN (" +
                         "SELECT id FROM history WHERE user=? " +
@@ -48,6 +55,10 @@ public class SongHistoryRepository {
         );
     }
 
+    /**
+     * Obtém as últimas músicas reproduzidas por um utilizador,
+     * ordenadas da mais recente para a mais antiga.
+     */
     public List<Song> getLast(String user, int limit) {
         List<Song> list = new ArrayList<>();
 
@@ -64,7 +75,6 @@ public class SongHistoryRepository {
                     c.getString(c.getColumnIndexOrThrow("artist")),
                     c.getString(c.getColumnIndexOrThrow("imageUrl")),
                     c.getString(c.getColumnIndexOrThrow("streamUrl"))
-
             ));
         }
 

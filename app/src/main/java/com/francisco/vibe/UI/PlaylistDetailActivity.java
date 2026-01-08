@@ -29,6 +29,11 @@ public class PlaylistDetailActivity extends AppCompatActivity
     private PlaylistSongsRepository repo;
     private SongAdapter adapter;
 
+    /**
+     * Inicializa a PlaylistDetailActivity.
+     * Obtém os dados da playlist enviados por Intent, prepara a interface,
+     * configura o RecyclerView e carrega as músicas da playlist.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -55,10 +60,9 @@ public class PlaylistDetailActivity extends AppCompatActivity
 
         adapter = new SongAdapter(
                 new ArrayList<>(),
-                this, // OnSongClickListener
-                song -> showRemoveSongDialog(song) // Only here
+                this,
+                song -> showRemoveSongDialog(song)
         );
-
 
         binding.rvSongs.setLayoutManager(new LinearLayoutManager(this));
         binding.rvSongs.setAdapter(adapter);
@@ -66,33 +70,40 @@ public class PlaylistDetailActivity extends AppCompatActivity
         loadSongs();
     }
 
+    /**
+     * Apresenta uma caixa de diálogo de confirmação para remover uma música da playlist.
+     * Caso o utilizador confirme, a música é removida e a lista é atualizada.
+     */
     private void showRemoveSongDialog(Song song) {
         new AlertDialog.Builder(this)
                 .setTitle("Remove Song")
                 .setMessage("Are you sure you want to remove \"" + song.getTitle() + "\" from this playlist?")
                 .setPositiveButton("Remove", (dialog, which) -> {
-                    // Remove from playlist repo
                     repo.removeSongFromPlaylist(playlistId, song);
-                    // Refresh RecyclerView
                     loadSongs();
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
-
+    /**
+     * Carrega as músicas da playlist a partir do repositório
+     * e atualiza o adapter do RecyclerView.
+     */
     private void loadSongs() {
         List<Song> songs = repo.getSongs(playlistId);
         adapter.setSongs(songs);
     }
 
+    /**
+     * Trata o evento de clique numa música da playlist.
+     * Abre o PlayerActivity e inicia a reprodução a partir da música selecionada.
+     */
     @OptIn(markerClass = UnstableApi.class)
     @Override
     public void onSongClicked(Song song) {
         Intent intent = new Intent(this, PlayerActivity.class);
-        // Pass the playlist ID instead of individual song info
         intent.putExtra("playlistId", playlistId);
-        // Optionally, pass the position to start from the clicked song
         intent.putExtra("startIndex", adapter.getSongs().indexOf(song));
 
         startActivity(intent);

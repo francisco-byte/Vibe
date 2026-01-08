@@ -11,11 +11,18 @@ public class FavoritesRepository {
 
     private final UserDatabase db;
 
+    /**
+     * Construtor do repositório de favoritos.
+     * Inicializa o acesso à base de dados da aplicação.
+     */
     public FavoritesRepository(Context c) {
         db = new UserDatabase(c);
     }
 
-    // Check favorite using trackid
+    /**
+     * Verifica se uma determinada música se encontra marcada como favorita
+     * para o utilizador atualmente autenticado.
+     */
     public boolean isFavorite(String user, String trackId) {
         Cursor c = db.getReadableDatabase().rawQuery(
                 "SELECT id FROM favorites WHERE user=? AND trackId=?",
@@ -26,7 +33,11 @@ public class FavoritesRepository {
         return fav;
     }
 
-    // Toggle favorite using trackid
+    /**
+     * Alterna o estado de favorito de uma música.
+     * Caso a música já esteja nos favoritos, é removida;
+     * caso contrário, é adicionada à lista de favoritos.
+     */
     public void toggle(String user, Song song) {
         SQLiteDatabase w = db.getWritableDatabase();
 
@@ -36,7 +47,6 @@ public class FavoritesRepository {
                     new Object[]{user, song.getTrackId()}
             );
         } else {
-            // Prevent duplicate insert
             if (!isFavorite(user, song.getTrackId())) {
                 w.execSQL(
                         "INSERT INTO favorites (user, trackId, title, artist, imageUrl, streamUrl) " +
@@ -54,6 +64,10 @@ public class FavoritesRepository {
         }
     }
 
+    /**
+     * Obtém todas as músicas favoritas associadas a um determinado utilizador,
+     * devolvendo-as sob a forma de uma lista de objetos Song.
+     */
     public List<Song> getAll(String user) {
         List<Song> list = new ArrayList<>();
 
@@ -76,4 +90,3 @@ public class FavoritesRepository {
         return list;
     }
 }
-

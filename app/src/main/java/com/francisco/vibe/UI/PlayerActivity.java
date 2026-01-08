@@ -41,15 +41,17 @@ public class PlayerActivity extends AppCompatActivity {
     private Song currentSong;
     private String currentUser;
 
-    // Lista que bate 1:1 com os MediaItems (só músicas tocáveis)
     private List<Song> songs = new ArrayList<>();
 
-    // Evita autoplay repetido
     private boolean autoPlayed = false;
 
-    // Estado favorito
     private boolean isFavorite = false;
 
+    /**
+     * Inicializa a PlayerActivity.
+     * Recebe os dados enviados por Intent, prepara a lista de músicas tocáveis,
+     * inicializa o ExoPlayer, configura os listeners e prepara a interface.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,7 +61,6 @@ public class PlayerActivity extends AppCompatActivity {
         currentUser = SessionManager.getUsername(this);
         favoritesRepo = new FavoritesRepository(this);
 
-        // ===== GET INTENT DATA =====
         String trackId = getIntent().getStringExtra("trackId");
         String title = getIntent().getStringExtra("title");
         String artist = getIntent().getStringExtra("artist");
@@ -77,26 +78,22 @@ public class PlayerActivity extends AppCompatActivity {
             rawSongs.add(new Song(trackId, title, artist, imageUrl, streamUrl));
         }
 
-        // ===== LOAD CONTROL (buffer maior -> menos cortes/estalos) =====
         LoadControl loadControl = new DefaultLoadControl.Builder()
                 .setBufferDurationsMs(
-                        15000, // minBufferMs
-                        60000, // maxBufferMs
-                        2500,  // bufferForPlaybackMs
-                        6000   // bufferForPlaybackAfterRebufferMs
+                        15000,
+                        60000,
+                        2500,
+                        6000
                 )
                 .build();
 
-        // ===== INITIALIZE PLAYER =====
         player = new ExoPlayer.Builder(this)
                 .setLoadControl(loadControl)
                 .build();
 
-        // estado inicial consistente
         player.setShuffleModeEnabled(false);
         player.setRepeatMode(Player.REPEAT_MODE_OFF);
 
-        // ===== ADD MEDIA ITEMS (e criar lista tocável em paralelo) =====
         List<MediaItem> mediaItems = new ArrayList<>();
         List<Song> playableSongs = new ArrayList<>();
 
@@ -125,7 +122,6 @@ public class PlayerActivity extends AppCompatActivity {
             }
         }
 
-        // agora songs = playableSongs (índices batem certo com o player)
         songs = playableSongs;
 
         if (!mediaItems.isEmpty()) {
@@ -136,9 +132,13 @@ public class PlayerActivity extends AppCompatActivity {
             Toast.makeText(this, "No playable tracks.", Toast.LENGTH_SHORT).show();
         }
 
-        // ===== PLAYER LISTENER =====
         player.addListener(new Player.Listener() {
 
+            /**
+             * Reage a alterações no estado de reprodução.
+             * Inicia automaticamente a reprodução quando o player fica pronto
+             * e atualiza o botão de play/pause conforme necessário.
+             */
             @Override
             public void onPlaybackStateChanged(int state) {
                 if (state == Player.STATE_READY && !autoPlayed) {
@@ -147,7 +147,6 @@ public class PlayerActivity extends AppCompatActivity {
                     binding.btnPlay.setImageResource(R.drawable.pause_button);
                 } else if (state == Player.STATE_ENDED) {
 
-                    // Fallback: se Repeat ALL estiver ligado, força voltar ao início
                     if (player != null && player.getRepeatMode() == Player.REPEAT_MODE_ALL) {
                         player.seekTo(0, 0);
                         player.prepare();
@@ -159,6 +158,10 @@ public class PlayerActivity extends AppCompatActivity {
                 }
             }
 
+            /**
+             * Controla o estado de interação dos botões com base no carregamento,
+             * evitando ações enquanto o player está a preparar ou a carregar dados.
+             */
             @Override
             public void onIsLoadingChanged(boolean isLoading) {
                 binding.btnPlay.setEnabled(!isLoading);
@@ -166,26 +169,32 @@ public class PlayerActivity extends AppCompatActivity {
                 binding.btnPrev.setEnabled(!isLoading);
             }
 
+            /**
+             * Trata erros de reprodução.
+             * Tenta recuperar automaticamente avançando para a próxima faixa,
+             * ou recomeçando a reprodução quando não existem mais itens.
+             */
             @Override
             public void onPlayerError(PlaybackException error) {
                 Toast.makeText(PlayerActivity.this, "Cannot play track", Toast.LENGTH_SHORT).show();
 
-                // tenta recuperar: salta para a próxima se existir
                 if (player != null && player.hasNextMediaItem()) {
                     player.seekToNextMediaItem();
                     player.prepare();
                     player.play();
                 } else if (player != null) {
-                    // se não houver próxima, tenta recomeçar
                     player.seekTo(0);
                     player.prepare();
                     player.play();
                 }
             }
 
+            /**
+             * Atualiza a informação apresentada quando ocorre transição de música,
+             * sincronizando a música atual com o índice do ExoPlayer.
+             */
             @Override
             public void onMediaItemTransition(MediaItem mediaItem, int reason) {
-                // usar o índice do player para ir buscar a Song real (com trackId)
                 int idx = player.getCurrentMediaItemIndex();
                 if (idx >= 0 && idx < songs.size()) {
                     currentSong = songs.get(idx);
@@ -194,7 +203,6 @@ public class PlayerActivity extends AppCompatActivity {
             }
         });
 
-        // ===== SETUP UI FOR FIRST SONG =====
         if (!songs.isEmpty()) {
             int idx = Math.max(0, Math.min(startIndex, songs.size() - 1));
             currentSong = songs.get(idx);
@@ -204,12 +212,15 @@ public class PlayerActivity extends AppCompatActivity {
         setupControls();
         binding.btnAddToPlaylist.setOnClickListener(v -> showAddToPlaylistDialog());
 
-        // garante que os botões começam com UI correta
         syncToggleButtonsUI();
 
         startSeekBarUpdate();
     }
 
+    /**
+     * Atualiza os elementos visuais do ecrã com base na música atual,
+     * incluindo título, artista, imagem e estado de favorito.
+     */
     private void updateUIForSong(Song song) {
         binding.songTitle.setText(song.getTitle());
         binding.songArtist.setText(song.getArtist());
@@ -222,6 +233,10 @@ public class PlayerActivity extends AppCompatActivity {
         updateFavoriteIcon();
     }
 
+    /**
+     * Configura os controlos do player (botões e seekbar),
+     * definindo as ações associadas a cada interação do utilizador.
+     */
     private void setupControls() {
 
         binding.btnBack.setOnClickListener(v -> {
@@ -274,7 +289,6 @@ public class PlayerActivity extends AppCompatActivity {
             syncToggleButtonsUI();
         });
 
-        // ✅ Repeat OFF -> ONE -> ALL (loop música -> loop playlist)
         binding.btnRepeat.setOnClickListener(v -> {
             feedback(v);
             if (player == null) return;
@@ -283,10 +297,10 @@ public class PlayerActivity extends AppCompatActivity {
             int newMode;
 
             if (mode == Player.REPEAT_MODE_OFF) {
-                newMode = Player.REPEAT_MODE_ONE;  // loop na música atual
+                newMode = Player.REPEAT_MODE_ONE;
                 Toast.makeText(this, "Repeat one", Toast.LENGTH_SHORT).show();
             } else if (mode == Player.REPEAT_MODE_ONE) {
-                newMode = Player.REPEAT_MODE_ALL;  // loop playlist inteira
+                newMode = Player.REPEAT_MODE_ALL;
                 Toast.makeText(this, "Repeat all", Toast.LENGTH_SHORT).show();
             } else {
                 newMode = Player.REPEAT_MODE_OFF;
@@ -308,12 +322,20 @@ public class PlayerActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Sincroniza a interface gráfica dos botões de alternância (shuffle e repeat)
+     * com o estado atual definido no ExoPlayer.
+     */
     private void syncToggleButtonsUI() {
         if (player == null) return;
         binding.btnShuffle.setAlpha(player.getShuffleModeEnabled() ? 1f : 0.4f);
         binding.btnRepeat.setAlpha(player.getRepeatMode() != Player.REPEAT_MODE_OFF ? 1f : 0.4f);
     }
 
+    /**
+     * Apresenta um diálogo que permite ao utilizador adicionar a música atual
+     * a uma das playlists existentes.
+     */
     private void showAddToPlaylistDialog() {
         if (currentSong == null) return;
 
@@ -348,6 +370,10 @@ public class PlayerActivity extends AppCompatActivity {
                 .show();
     }
 
+    /**
+     * Inicia a atualização periódica da seekbar e dos tempos de reprodução,
+     * mantendo a interface sincronizada com a posição atual do player.
+     */
     private void startSeekBarUpdate() {
         handler.postDelayed(new Runnable() {
             @Override
@@ -368,6 +394,10 @@ public class PlayerActivity extends AppCompatActivity {
         }, 0);
     }
 
+    /**
+     * Converte um valor em milissegundos para o formato minutos:segundos,
+     * para apresentação na interface.
+     */
     private String formatTime(long millis) {
         int totalSeconds = (int) (millis / 1000);
         int minutes = totalSeconds / 60;
@@ -375,12 +405,20 @@ public class PlayerActivity extends AppCompatActivity {
         return String.format("%d:%02d", minutes, seconds);
     }
 
+    /**
+     * Atualiza o ícone de favoritos, alterando cor e opacidade
+     * consoante a música atual esteja ou não marcada como favorita.
+     */
     private void updateFavoriteIcon() {
         int color = isFavorite ? getColor(R.color.md_theme_error) : getColor(android.R.color.white);
         binding.btnFavorite.setColorFilter(color);
         binding.btnFavorite.setAlpha(isFavorite ? 1f : 0.5f);
     }
 
+    /**
+     * Aplica feedback háptico e uma pequena animação ao botão pressionado,
+     * reforçando a resposta visual à interação do utilizador.
+     */
     private void feedback(View v) {
         v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
         v.animate()
@@ -389,6 +427,10 @@ public class PlayerActivity extends AppCompatActivity {
                 .start();
     }
 
+    /**
+     * Interrompe a reprodução, liberta os recursos do ExoPlayer
+     * e remove as atualizações pendentes do Handler.
+     */
     private void stopPlayerAndCleanup() {
         if (player != null) {
             player.stop();
@@ -398,6 +440,10 @@ public class PlayerActivity extends AppCompatActivity {
         handler.removeCallbacksAndMessages(null);
     }
 
+    /**
+     * Liberta recursos quando a Activity é destruída,
+     * evitando memory leaks e mantendo o comportamento estável.
+     */
     @Override
     protected void onDestroy() {
         stopPlayerAndCleanup();

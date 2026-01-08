@@ -8,7 +8,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.francisco.vibe.Data.Playlist;
 import com.francisco.vibe.R;
 
 import java.util.List;
@@ -16,6 +15,10 @@ import java.util.List;
 public class PlaylistAdapter
         extends RecyclerView.Adapter<PlaylistAdapter.ViewHolder> {
 
+    /**
+     * Interface responsável por definir o comportamento
+     * quando uma playlist é selecionada pelo utilizador.
+     */
     public interface OnPlaylistClickListener {
         void onPlaylistClick(Playlist playlist);
     }
@@ -23,6 +26,10 @@ public class PlaylistAdapter
     private List<Playlist> playlists;
     private final OnPlaylistClickListener listener;
 
+    /**
+     * Construtor do adapter das playlists.
+     * Inicializa a lista de playlists e o listener de cliques.
+     */
     public PlaylistAdapter(
             List<Playlist> playlists,
             OnPlaylistClickListener listener
@@ -31,11 +38,19 @@ public class PlaylistAdapter
         this.listener = listener;
     }
 
+    /**
+     * Atualiza a lista de playlists apresentada no RecyclerView
+     * e notifica o adapter para atualizar a interface.
+     */
     public void setPlaylists(List<Playlist> playlists) {
         this.playlists = playlists;
         notifyDataSetChanged();
     }
 
+    /**
+     * Cria e devolve um ViewHolder associado ao layout
+     * de cada item da lista de playlists.
+     */
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(
@@ -47,6 +62,10 @@ public class PlaylistAdapter
         return new ViewHolder(v);
     }
 
+    /**
+     * Associa os dados da playlist à ViewHolder correspondente,
+     * bem como o comportamento de clique sobre o item.
+     */
     @Override
     public void onBindViewHolder(
             @NonNull ViewHolder holder,
@@ -63,15 +82,25 @@ public class PlaylistAdapter
         });
     }
 
+    /**
+     * Devolve o número total de playlists existentes na lista.
+     */
     @Override
     public int getItemCount() {
         return playlists.size();
     }
 
+    /**
+     * ViewHolder responsável por manter as referências
+     * aos elementos visuais de cada item da playlist.
+     */
     static class ViewHolder extends RecyclerView.ViewHolder {
 
         TextView name;
 
+        /**
+         * Inicializa os componentes visuais do item da playlist.
+         */
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             name = itemView.findViewById(R.id.tvPlaylistName);

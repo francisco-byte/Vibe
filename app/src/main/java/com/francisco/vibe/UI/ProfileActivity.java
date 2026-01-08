@@ -14,6 +14,11 @@ import com.google.android.material.button.MaterialButton;
 
 public class ProfileActivity extends AppCompatActivity {
 
+    /**
+     * Inicializa o ecrã de perfil.
+     * Carrega a interface, apresenta o nome de utilizador da sessão atual
+     * e configura as ações de voltar atrás e terminar sessão.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,7 +35,6 @@ public class ProfileActivity extends AppCompatActivity {
             onBackPressed();
         });
 
-
         username.setText(SessionManager.getUsername(this));
 
         logout.setOnClickListener(v -> {
@@ -40,4 +44,3 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 }
-
